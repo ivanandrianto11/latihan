@@ -1,81 +1,16 @@
-import { PrismaClient } from '@prisma/client'
-import express, { Request, Response } from 'express'
+import express from 'express'
+import postsRouter from './router/posts'
+import userRouter from './router/users'
 import createError from 'http-errors'
 
-const prisma = new PrismaClient()
 const app = express()
 
 app.use(express.json())
 
-app.get('/posts', async (req: Request, res: Response) => {
-  const posts = await prisma.post.findMany({
-    include: { author: true }
-  })
-  res.json(posts)
-})
+app.use('/posts', postsRouter)
+app.use('/users', userRouter)
 
-app.post('/post', async (req: Request, res: Response) => {
-  const { content, authorEmail } = req.body
-  const result = await prisma.post.create({
-    data: {
-      content,
-      author: { connect: { email: authorEmail } }
-    }
-  })
-  res.json(result)
-})
-
-app.get('/post/:id', async (req: Request, res: Response) => {
-  const { id } = req.params
-  const post = await prisma.post.findUnique({
-    where: { id: Number(id) }
-  })
-  res.json(post)
-})
-
-app.put('/post/:id', async (req: Request, res: Response) => {
-  const { id } = req.params
-  const post = await prisma.post.update({
-    where: { id: Number(id) },
-    data: {
-      ...req.body
-    }
-  })
-
-  res.json(post)
-})
-
-app.delete(`/post/:id`, async (req: Request, res: Response) => {
-  const { id } = req.params
-  const post = await prisma.post.delete({
-    where: { id: Number(id) }
-  })
-  res.json(post)
-})
-
-app.post('/user', async (req: Request, res: Response) => {
-  const result = await prisma.user.create({
-    data: { ...req.body }
-  })
-  res.json(result)
-})
-
-app.get('/user/:username', async (req: Request, res: Response) => {
-  const { username } = req.params
-  const user = await prisma.user.findUnique({
-    where: { username: username },
-    include: {
-      posts: {
-        select: {
-          content: true
-        }
-      }
-    }
-  })
-  res.json(user)
-})
-
-app.use((next: Function) => {
+app.use((_req, _res, next) => {
   next(createError(404))
 })
 
